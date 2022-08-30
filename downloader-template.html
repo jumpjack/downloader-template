@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="PSPad editor, www.pspad.com">
+  <title></title>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <span id="status" name="status"></span><br>
+  <textarea id="log" name="log" cols = 50 rows = 30></textarea><br>
+  <textarea id="output" name="output" cols = 150 rows = 30></textarea><br>
+<script>
+
+// Three methods to retrieve remote files:
+// Axios.get (no poyload)
+// Axios post (with payload)
+// Legacy (just url)
+
+PROXY = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url="; // Use your own proxy!
+PROGRESS_SYMBOLS_COUNT = 5;
+
+
+  /*
+
+  HEADERS FORMAT:
+
+	queryHeaders = {
+		'field1' : value1,
+		'field2' : value2,
+		'Content-type'  : 'application/vnd.api+json' // debug
+	};
+
+  */
+
+
+function retrieveByPost(url, JSONpayload, headers) {
+	log.value += "retrieveByPost\n";
+	postUrl = PROXY + encodeURIComponent(url);
+  queryHeaders = headers;
+	actionPayload = JSONpayload;
+
+		return axios.post(
+			postUrl,
+			actionPayload,
+			{
+				headers: queryHeaders
+			})
+			.then(response => {
+        log.value += "POST response received.\n";
+				//console.log("Raw response for post: ", response);
+        //console.log("JSON response for POST:" + (JSON.stringify(response, null, 4)));
+				//output.value = "\JSON response for POST:\n" + (JSON.stringify(response, null, 4));
+			   return {r1:response, r2:JSON.stringify(response, null, 4)};
+			})
+			.catch((error) => {
+				console.log("POST error:", error);
+        log.value += "#####POST error\n";
+				return -1;
+			});
+}
+
+
+function retrieveByGet(url, headers) {
+	log.value += "retrieveByGet\n";
+	getUrl = PROXY + encodeURIComponent(url);
+  getHeaders = headers
+
+	return axios.get(
+		getUrl,
+		{
+			headers: getHeaders
+		})
+		.then(response => {
+        log.value += "GET response received.\n";
+			//console.log("Raw response for GET: ", response);
+      //console.log("JSON response for GET:" + (JSON.stringify(response, null, 4)));
+			//output.value = "\JSON response for GET:\n" + (JSON.stringify(response, null, 4));
+			return {r1:response, r2:JSON.stringify(response, null, 4)};
+		})
+		.catch((error) => {
+			console.log("GET error:", error);
+      log.value += "#####GET error\n";
+			return -1;
+		});
+}
+
+
+function retrieve(url) {
+		finalURL = PROXY +  encodeURIComponent(url); 
+		var myClient = new XMLHttpRequest();
+		myClient.open('GET',  finalURL);
+
+		myClient.onprogress = function(event) {
+			showDownloadProgress(myClient.response.length);
+		};
+
+		myClient.responseType = 'text';
+		myClient.onload = function(response) {
+//console.log("### Raw response for RETRIEVE: ",response);
+//console.log("### Sub-response for RETRIEVE: ",response.currentTarget.response);
+      log.value += "Legacy response received.\n";
+      return response.currentTarget.response;
+		}
+
+		myClient.onerror = function(event) {
+    log.value += "*****NETWORK ERROR**\n";
+		document.getElementById("status").innerHTML = "** NETWORK ERROR";
+		};
+    log.value += "Sending request...\n";
+		myClient.send(); // Async connection to data server.
+    log.value += "Request sent.\n";
+}
+
+
+function showDownloadProgress(L) {
+	progressStatusIndex++;
+	if (progressStatusIndex >= PROGRESS_SYMBOLS_COUNT) {
+		progressStatusIndex=0;
+	}
+	document.getElementById("status").innerHTML = "Downloading... " + L;
+}
+
+byPost = retrieveByPost("http://www.corriere.it");
+byGet = retrieveByGet("http://www.corriere.it");
+progressStatusIndex=0;
+legacy = retrieve("http://www.corriere.it");
+
+</script>
+
+  </body>
+</html>
