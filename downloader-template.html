@@ -7,9 +7,11 @@
 	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   </head>
   <body>
-    <span id="status" name="status"></span><br>
-  <textarea id="log" name="log" cols = 50 rows = 30></textarea><br>
-  <textarea id="output" name="output" cols = 150 rows = 30></textarea><br>
+    <span id="spnStatus" name="spnStatus"></span><br>
+  <textarea id="spnLog" name="spnLog" cols = 50 rows = 30></textarea><br>
+  <textarea id="spnOutput1" name="spnOutput1" cols = 150 rows = 30></textarea><br>
+  <textarea id="spnOutput2" name="spnOutput2" cols = 150 rows = 30></textarea><br>
+  <textarea id="spnOutput3" name="spnOutput3" cols = 150 rows = 30></textarea><br>
 <script>
 
 // Three methods to retrieve remote files:
@@ -19,7 +21,9 @@
 
 PROXY = "http://win98.altervista.org/space/exploration/myp.php?pass=miapass&mode=native&url="; // Use your own proxy!
 PROGRESS_SYMBOLS_COUNT = 5;
-
+byPost = null;
+byGet = null;
+legacy = null;
 
   /*
 
@@ -34,8 +38,8 @@ PROGRESS_SYMBOLS_COUNT = 5;
   */
 
 
-function retrieveByPost(url, JSONpayload, headers) {
-	log.value += "retrieveByPost\n";
+function retrieveByPost(url, JSONpayload, headers, log, output) {
+	if (log) log.value += "retrieveByPost\n";
 	postUrl = PROXY + encodeURIComponent(url);
   queryHeaders = headers;
 	actionPayload = JSONpayload;
@@ -47,22 +51,22 @@ function retrieveByPost(url, JSONpayload, headers) {
 				headers: queryHeaders
 			})
 			.then(response => {
-        log.value += "POST response received.\n";
+        if (log) log.value += "POST response received.\n";
 				//console.log("Raw response for post: ", response);
         //console.log("JSON response for POST:" + (JSON.stringify(response, null, 4)));
-				//output.value = "\JSON response for POST:\n" + (JSON.stringify(response, null, 4));
-			   return {r1:response, r2:JSON.stringify(response, null, 4)};
+				if (output) output.value = JSON.stringify(response, null, 4);
+			   byPost= {r1:response, r2:JSON.stringify(response, null, 4)};
 			})
 			.catch((error) => {
 				console.log("POST error:", error);
-        log.value += "#####POST error\n";
+        if (log) log.value += "#####POST error\n";
 				return -1;
 			});
 }
 
 
-function retrieveByGet(url, headers) {
-	log.value += "retrieveByGet\n";
+function retrieveByGet(url, headers, log, output) {
+	if (log) log.value += "retrieveByGet\n";
 	getUrl = PROXY + encodeURIComponent(url);
   getHeaders = headers
 
@@ -72,59 +76,69 @@ function retrieveByGet(url, headers) {
 			headers: getHeaders
 		})
 		.then(response => {
-        log.value += "GET response received.\n";
+        if (log) log.value += "GET response received.\n";
 			//console.log("Raw response for GET: ", response);
       //console.log("JSON response for GET:" + (JSON.stringify(response, null, 4)));
-			//output.value = "\JSON response for GET:\n" + (JSON.stringify(response, null, 4));
-			return {r1:response, r2:JSON.stringify(response, null, 4)};
+			if (output) output.value = JSON.stringify(response, null, 4);
+			byGet = {r1:response, r2:JSON.stringify(response, null, 4)};
 		})
 		.catch((error) => {
 			console.log("GET error:", error);
-      log.value += "#####GET error\n";
+      if (log) log.value += "#####GET error\n";
 			return -1;
 		});
 }
 
 
-function retrieve(url) {
+function retrieve(url, log, output, status) {
+console.log(url, log, output, status);
 		finalURL = PROXY +  encodeURIComponent(url); 
 		var myClient = new XMLHttpRequest();
 		myClient.open('GET',  finalURL);
 
 		myClient.onprogress = function(event) {
-			showDownloadProgress(myClient.response.length);
+			showDownloadProgress(myClient.response.length, status);
 		};
 
 		myClient.responseType = 'text';
 		myClient.onload = function(response) {
 //console.log("### Raw response for RETRIEVE: ",response);
 //console.log("### Sub-response for RETRIEVE: ",response.currentTarget.response);
-      log.value += "Legacy response received.\n";
-      return response.currentTarget.response;
+      if (log) {log.value += "Legacy response received.\n"} else {console.log("Legacy response received.\n")};
+      if (output) {output.value =  response} else {console.log(response)};
+      legacy = response;
 		}
 
 		myClient.onerror = function(event) {
-    log.value += "*****NETWORK ERROR**\n";
-		document.getElementById("status").innerHTML = "** NETWORK ERROR";
+      if (log) log.value += "*****NETWORK ERROR**\n";
+  		if (status) status.innerHTML = "** NETWORK ERROR";
 		};
-    log.value += "Sending request...\n";
+    if (log) log.value += "Sending request...\n";
 		myClient.send(); // Async connection to data server.
-    log.value += "Request sent.\n";
+    if (log) log.value += "Request sent.\n";
 }
 
 
-function showDownloadProgress(L) {
+function showDownloadProgress(L, status) {
 	progressStatusIndex++;
 	if (progressStatusIndex >= PROGRESS_SYMBOLS_COUNT) {
 		progressStatusIndex=0;
 	}
-	document.getElementById("status").innerHTML = "Downloading... " + L;
+	if (status) status.innerHTML = "Downloading... " + L;
 }
-
-byPost = retrieveByPost("http://www.corriere.it");
-byGet = retrieveByGet("http://www.corriere.it");
+/*
+retrieveByPost("http://www.corriere.it");
+retrieveByGet("http://www.corriere.it");
 progressStatusIndex=0;
-legacy = retrieve("http://www.corriere.it");
+retrieve("http://www.corriere.it");
+*/
+
+retrieveByPost("http://www.corriere.it", null, null, document.getElementById("spnLog"), document.getElementById("spnOutput1"));
+retrieveByGet("http://www.corriere.it", null, document.getElementById("spnLog"), document.getElementById("spnOutput2"));
+progressStatusIndex=0;
+retrieve("http://www.corriere.it", document.getElementById("spnLog"), document.getElementById("spnOutput3"), document.getElementById("spnStatus"));
+
+console.log(legacy);
 
 </script>
 
